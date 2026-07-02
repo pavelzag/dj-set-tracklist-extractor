@@ -1,4 +1,5 @@
 import FormData from 'form-data'
+import https from 'https'
 
 const API_TOKEN = process.env.AUDD_API_TOKEN!
 
@@ -22,19 +23,23 @@ export async function recognizeChunk(audioBuffer: Buffer, label = ''): Promise<R
   log(`${prefix} POST api.audd.io — ${(audioBuffer.length / 1024).toFixed(0)} KB`)
 
   const t0 = Date.now()
-  const response = await fetch('https://api.audd.io/', {
-    method: 'POST',
-    headers: form.getHeaders(),
-    body: form.getBuffer() as unknown as BodyInit,
+  const data = await new Promise<AuddResponse>((resolve, reject) => {
+    const req = https.request(
+      { hostname: 'api.audd.io', path: '/', method: 'POST', headers: form.getHeaders() },
+      (res) => {
+        let body = ''
+        res.on('data', (chunk: Buffer) => { body += chunk.toString() })
+        res.on('end', () => {
+          try { resolve(JSON.parse(body) as AuddResponse) }
+          catch { reject(new Error(`AudD non-JSON response: ${body.slice(0, 200)}`)) }
+        })
+      }
+    )
+    req.on('error', reject)
+    form.pipe(req)
   })
   const elapsed = Date.now() - t0
 
-  if (!response.ok) {
-    log(`${prefix} HTTP ${response.status} after ${elapsed}ms`)
-    throw new Error(`AudD HTTP ${response.status}`)
-  }
-
-  const data = await response.json() as AuddResponse
   log(`${prefix} response status="${data.status}" in ${elapsed}ms`)
 
   if (data.status !== 'success') {

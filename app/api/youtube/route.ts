@@ -4,7 +4,7 @@ import fs from 'fs'
 import path from 'path'
 import { getVideoInfo, downloadAudio } from '@/lib/ytdlp'
 import { getAudioDuration, extractChunk } from '@/lib/ffmpeg'
-import { recognizeChunk } from '@/lib/audd'
+import { recognizeFile } from '@/lib/shazam'
 
 export const maxDuration = 3600
 
@@ -56,11 +56,10 @@ export async function GET(request: NextRequest) {
 
           try {
             await extractChunk(audioFile, startTime, CHUNK_DURATION, chunkFile)
-            const audioBuffer = fs.readFileSync(chunkFile)
-            fs.unlinkSync(chunkFile)
 
             const label = ` chunk ${i + 1}/${totalChunks} @${formatTime(startTime)}`
-            const result = await recognizeChunk(audioBuffer, label)
+            const result = await recognizeFile(chunkFile, label)
+            fs.unlinkSync(chunkFile)
             send('progress', { current: i + 1, total: totalChunks })
 
             if (result) {

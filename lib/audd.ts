@@ -1,5 +1,6 @@
 import FormData from 'form-data'
 import https from 'https'
+import fs from 'fs'
 
 const API_TOKEN = process.env.AUDD_API_TOKEN!
 
@@ -12,15 +13,17 @@ export interface RecognitionResult {
   youtubeId?: string
 }
 
-export async function recognizeChunk(audioBuffer: Buffer, label = ''): Promise<RecognitionResult | null> {
+// Accepts a path to a WAV file on disk — form-data streams it correctly
+export async function recognizeFile(filePath: string, label = ''): Promise<RecognitionResult | null> {
   const prefix = label ? `[audd${label}]` : '[audd]'
+  const size = fs.statSync(filePath).size
 
   const form = new FormData()
   form.append('api_token', API_TOKEN)
   form.append('return', 'spotify')
-  form.append('audio', audioBuffer, { filename: 'chunk.wav', contentType: 'audio/wav' })
+  form.append('audio', fs.createReadStream(filePath), { filename: 'chunk.wav', contentType: 'audio/wav' })
 
-  log(`${prefix} POST api.audd.io — ${(audioBuffer.length / 1024).toFixed(0)} KB`)
+  log(`${prefix} POST api.audd.io — ${(size / 1024).toFixed(0)} KB`)
 
   const t0 = Date.now()
   const data = await new Promise<AuddResponse>((resolve, reject) => {

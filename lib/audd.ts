@@ -32,8 +32,13 @@ export async function recognizeChunk(audioBuffer: Buffer): Promise<RecognitionRe
 
   const data = await response.json() as AuddResponse
 
-  if (data.status !== 'success' || !data.result) {
-    return null
+  if (data.status !== 'success') {
+    const msg = data.error?.error_message ?? `AudD error status: ${data.status}`
+    throw new Error(msg)
+  }
+
+  if (!data.result) {
+    return null // no match found, not an error
   }
 
   const r = data.result
@@ -48,6 +53,7 @@ export async function recognizeChunk(audioBuffer: Buffer): Promise<RecognitionRe
 
 interface AuddResponse {
   status: string
+  error?: { error_code: number; error_message: string }
   result: {
     title: string
     artist: string

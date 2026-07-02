@@ -47,19 +47,31 @@ export default function YoutubeInput({ onTrack, onStateChange, onSetTitle, disab
       onTrack(track)
     })
 
-    eventSource.addEventListener('done', () => {
-      onStateChange({ status: 'done', current: 0, total: 0, message: 'Analysis complete' })
+    eventSource.addEventListener('warning', (e) => {
+      const data = JSON.parse(e.data) as { message: string }
+      console.warn('Recognition warning:', data.message)
+    })
+
+    eventSource.addEventListener('done', (e) => {
+      const data = JSON.parse(e.data) as { recognized: number; total: number; apiError: string | null }
+      const msg = data.apiError
+        ? `Done — API error: ${data.apiError}`
+        : `Done — ${data.recognized} of ${data.total} chunks identified`
+      onStateChange({ status: 'done', current: data.total, total: data.total, message: msg })
       eventSource.close()
     })
 
     eventSource.addEventListener('error', (e) => {
-      try {
-        const data = JSON.parse((e as MessageEvent).data) as { message: string }
-        onStateChange({ status: 'error', current: 0, total: 0, message: 'Error', error: data.message })
-      } catch {
-        onStateChange({ status: 'error', current: 0, total: 0, message: 'Connection error', error: 'Lost connection to server.' })
+      // Named 'error' SSE event from server (fatal pipeline failure)
+      if ((e as MessageEvent).data) {
+        try {
+          const data = JSON.parse((e as MessageEvent).data) as { message: string }
+          onStateChange({ status: 'error', current: 0, total: 0, message: 'Error', error: data.message })
+          eventSource.close()
+          return
+        } catch { /* fall through */ }
       }
-      eventSource.close()
+      // Native EventSource error (connection dropped after stream ends — ignore)
     })
   }, [url, disabled, onTrack, onStateChange, onSetTitle])
 

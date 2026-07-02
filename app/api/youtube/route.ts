@@ -42,6 +42,8 @@ export async function GET(request: NextRequest) {
         send('status', { message: `Analyzing ${Math.round(duration / 60)} min set...`, total: totalChunks })
 
         let lastKey = ''
+        let recognized = 0
+        let apiError: string | null = null
 
         for (let i = 0; i < totalChunks; i++) {
           const startTime = i * CHUNK_DURATION
@@ -56,21 +58,27 @@ export async function GET(request: NextRequest) {
             send('progress', { current: i + 1, total: totalChunks })
 
             if (result) {
+              recognized++
               const key = `${result.title}||${result.artist}`
               if (key !== lastKey) {
                 send('track', { ...result, timestamp: startTime })
                 lastKey = key
               }
             } else {
-              // Reset dedup so the next real detection always fires
               lastKey = ''
             }
-          } catch {
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Unknown error'
+            // Surface the first API error to the client; skip the chunk and continue
+            if (!apiError) {
+              apiError = msg
+              send('warning', { message: `Recognition error: ${msg}` })
+            }
             send('progress', { current: i + 1, total: totalChunks })
           }
         }
 
-        send('done', {})
+        send('done', { recognized, total: totalChunks, apiError })
       } catch (error) {
         send('error', { message: error instanceof Error ? error.message : 'Processing failed' })
       } finally {

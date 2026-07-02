@@ -7,6 +7,19 @@ export interface VideoInfo {
   uploader: string
 }
 
+// Builds cookie args based on environment:
+//   YTDLP_COOKIES_BROWSER=chrome|firefox|safari  (local dev)
+//   YTDLP_COOKIES_FILE=/path/to/cookies.txt      (Docker / Cloud Run)
+function cookieArgs(): string[] {
+  if (process.env.YTDLP_COOKIES_FILE) {
+    return ['--cookies', process.env.YTDLP_COOKIES_FILE]
+  }
+  if (process.env.YTDLP_COOKIES_BROWSER) {
+    return ['--cookies-from-browser', process.env.YTDLP_COOKIES_BROWSER]
+  }
+  return []
+}
+
 export function getVideoInfo(url: string): Promise<VideoInfo> {
   console.log(`${ts()} [yt-dlp] fetching info for ${url}`)
   return new Promise((resolve, reject) => {
@@ -16,6 +29,7 @@ export function getVideoInfo(url: string): Promise<VideoInfo> {
       '--print', '%(uploader)s',
       '--no-download',
       '--no-playlist',
+      ...cookieArgs(),
       url,
     ])
     let out = ''
@@ -47,6 +61,7 @@ export function downloadAudio(url: string, outputDir: string): Promise<string> {
       '--audio-quality', '5',
       '-o', outputTemplate,
       '--no-playlist',
+      ...cookieArgs(),
       url,
     ])
     let err = ''

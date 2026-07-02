@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(arrayBuffer)
 
     // Write to a temp file so AudD can be streamed via ReadStream
-    tmpFile = path.join(os.tmpdir(), `chunk_${randomUUID()}.wav`)
+    tmpFile = path.join(os.tmpdir(), `chunk_${randomUUID()}.mp3`)
     fs.writeFileSync(tmpFile, buffer)
 
     const timestamp = request.nextUrl.searchParams.get('t') ?? '?'

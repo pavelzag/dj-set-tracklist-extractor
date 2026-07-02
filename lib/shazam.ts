@@ -12,21 +12,19 @@ export interface RecognitionResult {
   youtubeId?: string
 }
 
-// Shazam API accepts raw audio bytes as base64, Content-Type: text/plain
+// Shazam API accepts raw binary audio bytes with Content-Type: text/plain (not base64)
 export async function recognizeFile(filePath: string, label = ''): Promise<RecognitionResult | null> {
   const prefix = label ? `[shazam${label}]` : '[shazam]'
-  const audioBuffer = fs.readFileSync(filePath)
-  const b64 = audioBuffer.toString('base64')
+  const body = fs.readFileSync(filePath)
 
-  log(`${prefix} POST shazam.p.rapidapi.com — ${(audioBuffer.length / 1024).toFixed(0)} KB`)
+  log(`${prefix} POST shazam.p.rapidapi.com — ${(body.length / 1024).toFixed(0)} KB`)
 
   const t0 = Date.now()
-  const data = await new Promise<ShazamResponse>((resolve, reject) => {
-    const body = Buffer.from(b64)
+  const data = await new Promise<ShazamResponse | null>((resolve, reject) => {
     const req = https.request(
       {
         hostname: 'shazam.p.rapidapi.com',
-        path: '/songs/v2/detect?timezone=UTC&locale=en-US',
+        path: '/songs/detect',
         method: 'POST',
         headers: {
           'Content-Type': 'text/plain',
@@ -39,6 +37,9 @@ export async function recognizeFile(filePath: string, label = ''): Promise<Recog
         let raw = ''
         res.on('data', (chunk: Buffer) => { raw += chunk.toString() })
         res.on('end', () => {
+          // 204 = no match (empty body), 200 = match with JSON
+          if (res.statusCode === 204 || !raw.trim()) { resolve(null); return }
+          if (res.statusCode !== 200) { reject(new Error(`Shazam HTTP ${res.statusCode}: ${raw.slice(0, 200)}`)); return }
           try { resolve(JSON.parse(raw) as ShazamResponse) }
           catch { reject(new Error(`Shazam non-JSON: ${raw.slice(0, 200)}`)) }
         })
@@ -50,7 +51,7 @@ export async function recognizeFile(filePath: string, label = ''): Promise<Recog
   })
   const elapsed = Date.now() - t0
 
-  if (!data.track) {
+  if (!data?.track) {
     log(`${prefix} no match (${elapsed}ms)`)
     return null
   }

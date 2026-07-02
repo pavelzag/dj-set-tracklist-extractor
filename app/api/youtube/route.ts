@@ -8,7 +8,7 @@ import { recognizeFile } from '@/lib/shazam'
 
 export const maxDuration = 3600
 
-const CHUNK_DURATION = 20 // seconds
+const CHUNK_DURATION = 10 // seconds — Shazam works best with 5-15s samples
 
 const ts = () => new Date().toISOString()
 const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
 
         for (let i = 0; i < totalChunks; i++) {
           const startTime = i * CHUNK_DURATION
-          const chunkFile = path.join(tmpDir, `chunk_${i}.wav`)
+          const chunkFile = path.join(tmpDir, `chunk_${i}.mp3`)
 
           try {
             await extractChunk(audioFile, startTime, CHUNK_DURATION, chunkFile)

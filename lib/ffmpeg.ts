@@ -32,13 +32,14 @@ export function extractChunk(
   outputFile: string,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
+    // Output as MP3: smaller than WAV, Shazam handles it well
     const proc = spawn('ffmpeg', [
       '-ss', startSeconds.toString(),
       '-i', inputFile,
       '-t', durationSeconds.toString(),
       '-ar', '44100',
       '-ac', '1',
-      '-f', 'wav',
+      '-q:a', '5',
       '-y',
       outputFile,
     ])

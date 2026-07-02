@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from 'react'
 import type { Track, ProcessingState } from '@/types'
 import { encodeWAV, mixdownToMono } from '@/lib/wav-encoder'
 
-const CHUNK_DURATION = 20 // seconds
+const CHUNK_DURATION = 10 // seconds
 const SUPPORTED = ['audio/wav', 'audio/mpeg', 'audio/mp3', 'audio/x-wav', 'audio/flac', 'audio/aac']
 
 interface Props {

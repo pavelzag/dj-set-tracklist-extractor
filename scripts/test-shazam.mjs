@@ -21,7 +21,7 @@ try {
     'yt-dlp -x --audio-format mp3 --audio-quality 5 -o /tmp/test_full.%(ext)s --no-playlist "https://www.youtube.com/watch?v=aJOTlE1K90k" --quiet',
     { stdio: 'pipe' }
   )
-  execSync('ffmpeg -i /tmp/test_full.mp3 -ss 30 -t 10 -ar 44100 -ac 1 -f wav /tmp/test_chunk.wav -y', { stdio: 'pipe' })
+  execSync('ffmpeg -ss 30 -i /tmp/test_full.mp3 -t 10 -ar 44100 -ac 1 -q:a 5 -y /tmp/test_chunk.mp3', { stdio: 'pipe' })
   console.log('  Done.')
 } catch (e) {
   console.error('  Setup failed:', e.message)
@@ -29,17 +29,14 @@ try {
 }
 
 console.log('\n[Test] Sending chunk to Shazam API...')
-const audioBuffer = readFileSync('/tmp/test_chunk.wav')
-const b64 = audioBuffer.toString('base64')
-const body = Buffer.from(b64)
-
-console.log(`  Audio: ${audioBuffer.length} bytes → ${body.length} bytes base64`)
+const body = readFileSync('/tmp/test_chunk.mp3')
+console.log(`  Audio: ${body.length} bytes (raw MP3)`)
 
 const result = await new Promise((resolve, reject) => {
   const req = https.request(
     {
       hostname: 'shazam.p.rapidapi.com',
-      path: '/songs/v2/detect?timezone=UTC&locale=en-US',
+      path: '/songs/detect',
       method: 'POST',
       headers: {
         'Content-Type': 'text/plain',

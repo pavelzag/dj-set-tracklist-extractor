@@ -11,24 +11,19 @@ export interface RecognitionResult {
 
 export async function recognizeChunk(audioBuffer: Buffer, label = ''): Promise<RecognitionResult | null> {
   const prefix = label ? `[audd${label}]` : '[audd]'
-  const boundary = `----AuddBoundary${Math.random().toString(36).slice(2)}`
 
-  const parts: Buffer[] = [
-    Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="api_token"\r\n\r\n${API_TOKEN}\r\n`),
-    Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="return"\r\n\r\nspotify\r\n`),
-    Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="audio"; filename="chunk.wav"\r\nContent-Type: audio/wav\r\n\r\n`),
-    audioBuffer,
-    Buffer.from(`\r\n--${boundary}--\r\n`),
-  ]
+  // Use native FormData so fetch sets the multipart boundary correctly
+  const form = new FormData()
+  form.append('api_token', API_TOKEN)
+  form.append('return', 'spotify')
+  form.append('audio', new Blob([new Uint8Array(audioBuffer)], { type: 'audio/wav' }), 'chunk.wav')
 
-  const body = Buffer.concat(parts)
   log(`${prefix} POST api.audd.io — ${(audioBuffer.length / 1024).toFixed(0)} KB`)
 
   const t0 = Date.now()
   const response = await fetch('https://api.audd.io/', {
     method: 'POST',
-    headers: { 'Content-Type': `multipart/form-data; boundary=${boundary}` },
-    body,
+    body: form,
   })
   const elapsed = Date.now() - t0
 

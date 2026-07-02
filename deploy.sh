@@ -21,7 +21,7 @@ gcloud run deploy "${SERVICE}" \
   --memory 2Gi \
   --cpu 2 \
   --timeout 3600 \
-  --set-env-vars "ACR_HOST=${ACR_HOST},ACR_ACCESS_KEY=${ACR_ACCESS_KEY},ACR_ACCESS_SECRET=${ACR_ACCESS_SECRET}" \
+  --set-env-vars "AUDD_API_TOKEN=${AUDD_API_TOKEN}" \
   --project "${PROJECT_ID}"
 
 echo ""

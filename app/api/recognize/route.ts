@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { recognizeChunk } from '@/lib/acr-cloud'
+import { recognizeChunk } from '@/lib/audd'
 
 export const maxDuration = 30
 

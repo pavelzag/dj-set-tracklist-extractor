@@ -4,7 +4,7 @@ import fs from 'fs'
 import path from 'path'
 import { getVideoInfo, downloadAudio } from '@/lib/ytdlp'
 import { getAudioDuration, extractChunk } from '@/lib/ffmpeg'
-import { recognizeChunk } from '@/lib/acr-cloud'
+import { recognizeChunk } from '@/lib/audd'
 
 export const maxDuration = 3600
 

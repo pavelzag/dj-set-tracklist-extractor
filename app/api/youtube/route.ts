@@ -10,6 +10,9 @@ export const maxDuration = 3600
 
 const CHUNK_DURATION = 20 // seconds
 
+const ts = () => new Date().toISOString()
+const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.searchParams.get('url')
   if (!url) {
@@ -29,6 +32,7 @@ export async function GET(request: NextRequest) {
 
       try {
         fs.mkdirSync(tmpDir, { recursive: true })
+        console.log(`${ts()} [job:${jobId}] start url=${url}`)
 
         send('status', { message: 'Fetching video info...' })
         const info = await getVideoInfo(url)
@@ -39,6 +43,7 @@ export async function GET(request: NextRequest) {
 
         const duration = await getAudioDuration(audioFile)
         const totalChunks = Math.ceil(duration / CHUNK_DURATION)
+        console.log(`${ts()} [job:${jobId}] ${totalChunks} chunks to process (${CHUNK_DURATION}s each)`)
         send('status', { message: `Analyzing ${Math.round(duration / 60)} min set...`, total: totalChunks })
 
         let lastKey = ''
@@ -54,13 +59,15 @@ export async function GET(request: NextRequest) {
             const audioBuffer = fs.readFileSync(chunkFile)
             fs.unlinkSync(chunkFile)
 
-            const result = await recognizeChunk(audioBuffer)
+            const label = ` chunk ${i + 1}/${totalChunks} @${formatTime(startTime)}`
+            const result = await recognizeChunk(audioBuffer, label)
             send('progress', { current: i + 1, total: totalChunks })
 
             if (result) {
               recognized++
               const key = `${result.title}||${result.artist}`
               if (key !== lastKey) {
+                console.log(`${ts()} [job:${jobId}] NEW TRACK @${formatTime(startTime)}: ${result.artist} - ${result.title}`)
                 send('track', { ...result, timestamp: startTime })
                 lastKey = key
               }
@@ -69,7 +76,7 @@ export async function GET(request: NextRequest) {
             }
           } catch (err) {
             const msg = err instanceof Error ? err.message : 'Unknown error'
-            // Surface the first API error to the client; skip the chunk and continue
+            console.error(`${ts()} [job:${jobId}] chunk ${i + 1} error: ${msg}`)
             if (!apiError) {
               apiError = msg
               send('warning', { message: `Recognition error: ${msg}` })
@@ -78,11 +85,15 @@ export async function GET(request: NextRequest) {
           }
         }
 
+        console.log(`${ts()} [job:${jobId}] done — ${recognized}/${totalChunks} chunks recognized`)
         send('done', { recognized, total: totalChunks, apiError })
       } catch (error) {
-        send('error', { message: error instanceof Error ? error.message : 'Processing failed' })
+        const msg = error instanceof Error ? error.message : 'Processing failed'
+        console.error(`${ts()} [job:${jobId}] fatal error: ${msg}`)
+        send('error', { message: msg })
       } finally {
         fs.rmSync(tmpDir, { recursive: true, force: true })
+        console.log(`${ts()} [job:${jobId}] tmp cleaned up`)
         controller.close()
       }
     },

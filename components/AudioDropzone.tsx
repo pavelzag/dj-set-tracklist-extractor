@@ -49,7 +49,7 @@ export default function AudioDropzone({ onTrack, onStateChange, disabled }: Prop
         const form = new FormData()
         form.append('chunk', wavBlob, 'chunk.wav')
 
-        const res = await fetch('/api/recognize', { method: 'POST', body: form })
+        const res = await fetch(`/api/recognize?t=${i * CHUNK_DURATION}`, { method: 'POST', body: form })
         const data = await res.json() as { track: Track | null }
 
         onStateChange({ status: 'processing', current: i + 1, total: totalChunks, message: `Analyzing ${Math.round(audioBuffer.duration / 60)} min set...` })

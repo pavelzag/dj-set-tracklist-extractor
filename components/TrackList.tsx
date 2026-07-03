@@ -77,7 +77,7 @@ export default function TrackList({ tracks, setTitle }: Props) {
               )}
               {track.youtubeId && (
                 <a
-                  href={`https://youtube.com/watch?v=${track.youtubeId}`}
+                  href={track.youtubeId}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs px-2 py-1 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"

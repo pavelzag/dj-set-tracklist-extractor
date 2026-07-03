@@ -7,12 +7,13 @@ RUN npm run build
 
 FROM node:20-slim AS runner
 
-# Install ffmpeg and yt-dlp
+# Install ffmpeg, yt-dlp, and chromaprint (fpcalc for AcoustID fingerprinting)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     python3 \
     python3-pip \
     curl \
+    libchromaprint-tools \
     && pip3 install yt-dlp --break-system-packages \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*

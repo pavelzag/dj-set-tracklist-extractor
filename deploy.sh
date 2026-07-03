@@ -21,7 +21,7 @@ gcloud run deploy "${SERVICE}" \
   --memory 2Gi \
   --cpu 2 \
   --timeout 3600 \
-  --set-env-vars "AUDD_API_TOKEN=${AUDD_API_TOKEN}" \
+  --set-env-vars "ACOUSTID_API_KEY=${ACOUSTID_API_KEY:?Set ACOUSTID_API_KEY},YTDLP_COOKIES_FILE=${YTDLP_COOKIES_FILE:-}" \
   --project "${PROJECT_ID}"
 
 echo ""

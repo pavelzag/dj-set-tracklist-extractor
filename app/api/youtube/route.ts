@@ -4,7 +4,7 @@ import fs from 'fs'
 import path from 'path'
 import { getVideoInfo, downloadAudio } from '@/lib/ytdlp'
 import { getAudioDuration, extractChunk } from '@/lib/ffmpeg'
-import { recognizeFile } from '@/lib/shazam'
+import { recognizeFile } from '@/lib/acoustid'
 
 export const maxDuration = 3600
 

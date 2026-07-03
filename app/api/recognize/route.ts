@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { recognizeFile } from '@/lib/shazam'
+import { recognizeFile } from '@/lib/acoustid'
 import { randomUUID } from 'crypto'
 import fs from 'fs'
 import os from 'os'
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(arrayBuffer)
 
     // Write to a temp file so AudD can be streamed via ReadStream
-    tmpFile = path.join(os.tmpdir(), `chunk_${randomUUID()}.mp3`)
+    tmpFile = path.join(os.tmpdir(), `chunk_${randomUUID()}.wav`)
     fs.writeFileSync(tmpFile, buffer)
 
     const timestamp = request.nextUrl.searchParams.get('t') ?? '?'
